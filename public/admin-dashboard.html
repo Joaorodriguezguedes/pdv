@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Gestão de Usuários</title>
+    <script src="security.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #c00 0%, #8b0000 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-item.active {
+            border-left: 4px solid white;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 30px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #c00;
+            font-size: 24px;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-info span {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            border-top: 4px solid #c00;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #c00;
+        }
+
+        .users-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .section-header h2 {
+            color: #c00;
+            font-size: 22px;
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, #c00 0%, #8b0000 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(204, 0, 0, 0.4);
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .users-table th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .users-table td {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            min-width: 180px;
+        }
+
+        .action-btns button {
+            padding: 6px 8px;
+            font-size: 10px;
+            flex: 1 0 40px;
+            white-space: nowrap;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .action-btns button:hover {
+            opacity: 0.8;
+        }
+
+        .action-btns .upload-btn { background: #c00; }
+        .action-btns .bar-1 { background: #27ae60; }
+        .action-btns .bar-2 { background: #e67e22; }
+        .action-btns .bar-3 { background: #9b59b6; }
+        .action-btns .finish-btn { background: #c00; }
+
+        .action-btns button.disabled {
+            background: #ccc !important;
+            color: #666 !important;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .validation-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        .validation-btns button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #333;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .validation-btns button.active {
+            background: #c00;
+            color: #fff;
+            border-color: #c00;
+        }
+
+        .edit-btn {
+            background: #c00;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn {
+            background: #8b0000;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .edit-btn:hover {
+            background: #a00;
+        }
+
+        .delete-btn:hover {
+            background: #6b0000;
+        }
+
+        /* Modal Customizado */
+        .custom-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .custom-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .custom-modal-content p {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .custom-modal-content button {
+            background-color: #c00;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .custom-modal-content button:hover {
+            opacity: 0.9;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: #333;
+            font-size: 22px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .save-btn {
+            flex: 1;
+            padding: 12px;
+            background: linear-gradient(135deg, #c00 0%, #8b0000 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .cancel-btn {
+            flex: 1;
+            padding: 12px;
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .save-btn:hover {
+            opacity: 0.9;
+        }
+
+        .cancel-btn:hover {
+            background: #d0d0d0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+            }
+
+            .stats-cards {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1001;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .header-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .users-table {
+                font-size: 12px;
+            }
+
+            .users-table th,
+            .users-table td {
+                padding: 10px 8px;
+            }
+
+            .action-btns {
+                flex-direction: column;
+            }
+
+            .menu-toggle {
+                display: block;
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                z-index: 1002;
+                background: #c00;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 20px;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-width: none;
+                margin: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .header-info span {
+                font-size: 12px;
+            }
+
+            .users-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .users-table thead {
+                display: none;
+            }
+
+            .users-table tbody tr {
+                display: block;
+                margin-bottom: 15px;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                padding: 10px;
+            }
+
+            .users-table tbody td {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .users-table tbody td:before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #333;
+                margin-right: 10px;
+            }
+
+            .users-table tbody td:last-child {
+                border-bottom: none;
+            }
+
+            .action-btns {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .edit-btn,
+            .delete-btn,
+            .save-btn {
+                width: 100%;
+            }
+        }
+
+        .menu-toggle {
+            display: none;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Painel Admin</h2>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item active">
+                <span>⏳</span>
+                <span>Pendentes</span>
+            </div>
+            <div class="menu-item">
+                <span>✅</span>
+                <span>Concluídas</span>
+            </div>
+            <div class="menu-item">
+                <span>⚙️</span>
+                <span>Configurações</span>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="logout-btn" id="logoutBtn">Sair</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Painel Admin</h1>
+            <div class="header-info">
+                <span id="welcomeUser">Bem-vindo, Admin</span>
+            </div>
+        </div>
+
+        <div class="container">
+
+        <div class="users-section" style="margin-top: 30px;">
+            <div class="section-header">
+                <h2>Monitoramento em Tempo Real - Usuários Pendentes</h2>
+                <button class="add-btn" id="refreshPendingBtn" style="background: #27ae60;">Atualizar</button>
+            </div>
+
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Senha</th>
+                        <th>Código</th>
+                        <th>Status</th>
+                        <th>Validação</th>
+                        <th>Ações</th>
+                        <th>Sessão</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingUsersTableBody">
+                </tbody>
+            </table>
+
+            <div class="empty-state" id="pendingEmptyState" style="display: none;">
+                <p>Nenhum usuário pendente</p>
+            </div>
+        </div>
+
+        <div class="users-section" id="completedSection" style="margin-top: 30px; display: none;">
+            <div class="section-header">
+                <h2>Usuários Concluídos</h2>
+                <button class="add-btn" id="refreshCompletedBtn" style="background: #27ae60;">Atualizar</button>
+            </div>
+
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Senha</th>
+                        <th>Código</th>
+                        <th>Validação</th>
+                        <th>Data Conclusão</th>
+                        <th>Sessão</th>
+                    </tr>
+                </thead>
+                <tbody id="completedUsersTableBody">
+                </tbody>
+            </table>
+
+            <div class="empty-state" id="completedEmptyState" style="display: none;">
+                <p>Nenhum usuário concluído</p>
+            </div>
+        </div>
+
+        <div class="users-section" id="settingsSection" style="margin-top: 30px; display: none;">
+            <div class="section-header">
+                <h2>Configurações</h2>
+            </div>
+            <div style="padding: 20px;">
+                <div class="form-group">
+                    <label for="currentPassword">Senha Atual</label>
+                    <input type="password" id="currentPassword" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Nova Senha</label>
+                    <input type="password" id="newPassword" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmar Nova Senha</label>
+                    <input type="password" id="confirmPassword" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+                </div>
+                <button class="add-btn" id="changePasswordBtn">Alterar Senha</button>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Modal Customizado para Alertas -->
+    <div class="custom-modal-overlay" id="alertModal">
+        <div class="custom-modal-content">
+            <p id="alertMessage"></p>
+            <button id="alertBtn">OK</button>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div class="custom-modal-overlay" id="confirmModal">
+        <div class="custom-modal-content">
+            <p id="confirmMessage"></p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="confirmYesBtn">Sim</button>
+                <button id="confirmNoBtn" style="background-color: #eee; color: #333;">Não</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Upload de QR Code -->
+    <div class="modal" id="qrModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload de QR Code</h2>
+                <button class="close-btn" id="closeQrModal">&times;</button>
+            </div>
+            <form id="qrForm">
+                <input type="hidden" id="qrSessionId">
+                <div class="form-group">
+                    <label for="qrImage">Imagem do QR Code</label>
+                    <input type="file" id="qrImage" accept="image/*" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="save-btn">Upload</button>
+                    <button type="button" class="cancel-btn" id="cancelQrBtn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Backend API URL
+        const API_URL = 'http://localhost:3000/api';
+
+        // Verificar autenticação
+        // Acesso controlado apenas pela URL/route (admin-login.html)
+        if (localStorage.getItem('adminLoggedIn') !== 'true') {
+            window.location.href = 'admin-login.html';
+        }
+
+        // Inicializar usuários no localStorage se não existirem
+        if (!localStorage.getItem('users')) {
+            const initialUsers = [
+                { id: 1, username: 'usuario1', password: 'senha123', status: 'ativo' },
+                { id: 2, username: 'usuario2', password: 'senha456', status: 'ativo' }
+            ];
+            localStorage.setItem('users', JSON.stringify(initialUsers));
+        }
+
+        // Elementos DOM
+        const logoutBtn = document.getElementById('logoutBtn');
+        const welcomeUser = document.getElementById('welcomeUser');
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        
+        // Elementos DOM para usuários pendentes
+        const pendingUsersTableBody = document.getElementById('pendingUsersTableBody');
+        const pendingEmptyState = document.getElementById('pendingEmptyState');
+        const refreshPendingBtn = document.getElementById('refreshPendingBtn');
+        
+        // Elementos DOM para usuários concluídos
+        const completedUsersTableBody = document.getElementById('completedUsersTableBody');
+        const completedEmptyState = document.getElementById('completedEmptyState');
+        const refreshCompletedBtn = document.getElementById('refreshCompletedBtn');
+        
+        // Elementos DOM para modal QR
+        const qrModal = document.getElementById('qrModal');
+        const qrForm = document.getElementById('qrForm');
+        const closeQrModal = document.getElementById('closeQrModal');
+        const cancelQrBtn = document.getElementById('cancelQrBtn');
+
+        // Novos modais customizados
+        const alertModal = document.getElementById('alertModal');
+        const alertMessage = document.getElementById('alertMessage');
+        const alertBtn = document.getElementById('alertBtn');
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmYesBtn = document.getElementById('confirmYesBtn');
+        const confirmNoBtn = document.getElementById('confirmNoBtn');
+
+        function showAlert(msg) {
+            alertMessage.textContent = msg;
+            alertModal.style.display = 'flex';
+        }
+
+        alertBtn.onclick = () => alertModal.style.display = 'none';
+
+        function showConfirm(msg, onConfirm) {
+            confirmMessage.textContent = msg;
+            confirmModal.style.display = 'flex';
+            confirmYesBtn.onclick = () => {
+                confirmModal.style.display = 'none';
+                onConfirm();
+            };
+            confirmNoBtn.onclick = () => confirmModal.style.display = 'none';
+        }
+
+        // Definir nome do usuário logado
+        welcomeUser.textContent = 'Bem-vindo, Administrador';
+
+        // Logout
+        logoutBtn.addEventListener('click', function() {
+            localStorage.removeItem('adminLoggedIn');
+            localStorage.removeItem('adminUsername');
+            window.location.href = 'admin-login.html';
+        });
+
+        // Menu navigation
+        const menuItems = document.querySelectorAll('.menu-item');
+        const pendingSection = document.querySelector('.users-section');
+        const completedSection = document.getElementById('completedSection');
+        const settingsSection = document.getElementById('settingsSection');
+
+        // Mobile menu toggle
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        });
+
+        overlay.addEventListener('click', function() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        });
+
+        // Close sidebar when clicking menu items on mobile
+        menuItems.forEach(item => {
+            item.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('show');
+                }
+            });
+        });
+
+        menuItems.forEach(item => {
+            item.addEventListener('click', function() {
+                // Remove active class from all items
+                menuItems.forEach(i => i.classList.remove('active'));
+                // Add active class to clicked item
+                this.classList.add('active');
+
+                // Hide all sections
+                pendingSection.style.display = 'none';
+                completedSection.style.display = 'none';
+                settingsSection.style.display = 'none';
+
+                // Show selected section
+                const text = this.textContent.trim();
+                if (text.includes('Pendentes')) {
+                    pendingSection.style.display = 'block';
+                } else if (text.includes('Concluídas')) {
+                    completedSection.style.display = 'block';
+                } else if (text.includes('Configurações')) {
+                    settingsSection.style.display = 'block';
+                }
+            });
+        });
+
+        // Change password functionality
+        document.getElementById('changePasswordBtn').addEventListener('click', async function() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const adminUsername = localStorage.getItem('adminUsername');
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showAlert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showAlert('A nova senha e a confirmação não coincidem.');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showAlert('A nova senha deve ter pelo menos 6 caracteres.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/admin-change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ adminUsername, currentPassword, newPassword })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok || !result.success) {
+                    showAlert('Senha atual incorreta ou erro ao atualizar.');
+                    return;
+                }
+
+                showAlert('Senha alterada com sucesso!');
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showAlert('Erro ao alterar senha. Tente novamente.');
+            }
+        });
+
+        // Carregar usuários pendentes
+        async function loadPendingUsers() {
+            try {
+                const response = await fetch(`${API_URL}/pending-users`);
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Error loading pending users:', result.error);
+                    return;
+                }
+                
+                const pendingUsers = result.data.filter(user => user.status !== 'completed' && user.status !== 'approved');
+                
+                pendingUsersTableBody.innerHTML = '';
+
+                if (!pendingUsers || pendingUsers.length === 0) {
+                    pendingEmptyState.style.display = 'block';
+                    pendingUsersTableBody.parentElement.style.display = 'none';
+                } else {
+                    pendingEmptyState.style.display = 'none';
+                    pendingUsersTableBody.parentElement.style.display = 'table';
+
+                    pendingUsers.forEach(user => {
+                        const row = document.createElement('tr');
+                        
+                        // Traduzir status para português
+                        const statusMap = {
+                            'waiting_first_bar': 'Aguardando 1ª Barra',
+                            'waiting_qr': 'Aguardando QR Code',
+                            'waiting_second_bar': 'Aguardando 2ª Barra',
+                            'waiting_third_bar': 'Aguardando 3ª Barra',
+                            'waiting_admin_approval': 'Aguardando Aprovação Admin',
+                            'approved': 'Aprovado'
+                        };
+                        
+                        const statusText = statusMap[user.status] || user.status;
+                        const statusColor = user.status === 'approved' ? '#27ae60' : (user.status === 'waiting_admin_approval' ? '#e67e22' : '#f39c12');
+                        
+                        row.innerHTML = `
+                            <td style="font-weight: 600; color: #333;">${user.username}</td>
+                            <td>${user.password}</td>
+                            <td style="font-weight: bold; color: #c00;">${user.code || '-'}</td>
+                            <td>
+                                <span style="color: ${statusColor}; font-weight: 600; font-size: 12px;">
+                                    ${statusText}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="validation-btns">
+                                    <button id="qrBtn_${user.session_id}" class="${user.validation_type === 'qr' ? 'active' : ''}" onclick="selectValidationType('${user.session_id}', 'qr')">QR</button>
+                                    <button id="keyBtn_${user.session_id}" class="${user.validation_type === 'security_key' ? 'active' : ''}" onclick="selectValidationType('${user.session_id}', 'security_key')">Chave</button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="upload-btn ${user.validation_type === 'qr' ? '' : 'disabled'}" id="uploadQrBtn_${user.session_id}" onclick="uploadQrCode('${user.session_id}')">QR</button>
+                                    <button class="bar-1" onclick="completeFirstBar('${user.session_id}')">1ª</button>
+                                    <button class="bar-2" onclick="completeSecondBar('${user.session_id}')">2ª</button>
+                                    <button class="bar-3" onclick="completeThirdBar('${user.session_id}')">3ª</button>
+                                    <button class="finish-btn" onclick="completeUser('${user.session_id}')">OK</button>
+                                </div>
+                            </td>
+                            <td style="font-size: 10px; color: #999;">${user.session_id}</td>
+                        `;
+                        pendingUsersTableBody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading pending users:', error);
+            }
+        }
+
+        // Select validation type and update UI
+        window.selectValidationType = async function(sessionId, type) {
+            console.log('Selecting validation type:', sessionId, type);
+            try {
+                const response = await fetch(`${API_URL}/pending-users/${sessionId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ validation_type: type })
+                });
+                
+                const result = await response.json();
+                console.log('Response:', result);
+                
+                if (!response.ok || !result.success) {
+                    console.error('Error updating validation type:', result.error);
+                    showAlert('Erro ao atualizar tipo de validação. Tente novamente.');
+                    return;
+                }
+                
+                console.log('Validation type updated successfully, reloading...');
+                // Reload to update button states
+                loadPendingUsers();
+            } catch (error) {
+                console.error('Error updating validation type:', error);
+                showAlert('Erro ao atualizar tipo de validação. Tente novamente.');
+            }
+        };
+        
+        // Go to login page
+        window.goToLogin = function() {
+            window.location.href = 'index.html';
+        };
+
+        // Upload QR Code
+        window.uploadQrCode = function(sessionId) {
+            document.getElementById('qrSessionId').value = sessionId;
+            qrModal.classList.add('show');
+        };
+
+        // Fechar modal QR
+        function closeQrModalFunc() {
+            qrModal.classList.remove('show');
+            qrForm.reset();
+        }
+
+        closeQrModal.addEventListener('click', closeQrModalFunc);
+        cancelQrBtn.addEventListener('click', closeQrModalFunc);
+
+        // Submit QR form
+        qrForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const sessionId = document.getElementById('qrSessionId').value;
+            const qrImageFile = document.getElementById('qrImage').files[0];
+            
+            if (qrImageFile) {
+                try {
+                    const formData = new FormData();
+                    formData.append('sessionId', sessionId);
+                    formData.append('qrImage', qrImageFile);
+                    
+                    const response = await fetch(`${API_URL}/upload-qr`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok || !result.success) {
+                        console.error('Error uploading QR code:', result.error);
+                        showAlert('Erro ao fazer upload do QR Code. Tente novamente.');
+                        return;
+                    }
+                    
+                    closeQrModalFunc();
+                    loadPendingUsers();
+                    showAlert('QR Code anexado com sucesso!');
+                } catch (error) {
+                    console.error('Error uploading QR code:', error);
+                    showAlert('Erro ao fazer upload do QR Code. Tente novamente.');
+                }
+            }
+        });
+
+        // Completar primeira barra
+        window.completeFirstBar = async function(sessionId) {
+            showConfirm('Tem certeza que deseja completar a primeira barra (100%)?', async () => {
+                try {
+                    const response = await fetch(`${API_URL}/pending-users/${sessionId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            status: 'waiting_qr'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok || !result.success) {
+                        console.error('Error completing first bar:', result.error);
+                        showAlert('Erro ao completar primeira barra. Tente novamente.');
+                        return;
+                    }
+                    
+                    loadPendingUsers();
+                    showAlert('Primeira barra completada (100%)!');
+                } catch (error) {
+                    console.error('Error completing first bar:', error);
+                    showAlert('Erro ao completar primeira barra. Tente novamente.');
+                }
+            });
+        };
+
+        // Completar segunda barra
+        window.completeSecondBar = async function(sessionId) {
+            showConfirm('Tem certeza que deseja completar a segunda barra (100%)?', async () => {
+                try {
+                    const response = await fetch(`${API_URL}/pending-users/${sessionId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            status: 'waiting_third_bar'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok || !result.success) {
+                        console.error('Error completing second bar:', result.error);
+                        showAlert('Erro ao completar segunda barra. Tente novamente.');
+                        return;
+                    }
+                    
+                    loadPendingUsers();
+                    showAlert('Segunda barra completada (100%)!');
+                } catch (error) {
+                    console.error('Error completing second bar:', error);
+                    showAlert('Erro ao completar segunda barra. Tente novamente.');
+                }
+            });
+        };
+
+        // Completar terceira barra
+        window.completeThirdBar = async function(sessionId) {
+            showConfirm('Tem certeza que deseja completar a terceira barra (100%)?', async () => {
+                try {
+                    const response = await fetch(`${API_URL}/pending-users/${sessionId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            status: 'waiting_admin_approval'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok || !result.success) {
+                        console.error('Error completing third bar:', result.error);
+                        showAlert('Erro ao completar terceira barra. Tente novamente.');
+                        return;
+                    }
+                    
+                    loadPendingUsers();
+                    showAlert('Terceira barra completada (100%)!');
+                } catch (error) {
+                    console.error('Error completing third bar:', error);
+                    showAlert('Erro ao completar terceira barra. Tente novamente.');
+                }
+            });
+        };
+
+        // Concluir usuário - mover para concluídas
+        window.completeUser = async function(sessionId) {
+            showConfirm('Tem certeza que deseja concluir este usuário?', async () => {
+                try {
+                    const response = await fetch(`${API_URL}/pending-users/${sessionId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            status: 'completed',
+                            completed_at: new Date().toISOString()
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok || !result.success) {
+                        console.error('Error completing user:', result.error);
+                        showAlert('Erro ao concluir usuário. Tente novamente.');
+                        return;
+                    }
+                    
+                    loadPendingUsers();
+                    loadCompletedUsers();
+                    showAlert('Usuário concluído com sucesso!');
+                } catch (error) {
+                    console.error('Error completing user:', error);
+                    showAlert('Erro ao concluir usuário. Tente novamente.');
+                }
+            });
+        };
+
+        // Botão de atualizar usuários pendentes
+        refreshPendingBtn.addEventListener('click', loadPendingUsers);
+
+        // Carregar usuários concluídos
+        async function loadCompletedUsers() {
+            try {
+                const response = await fetch(`${API_URL}/completed-users`);
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Error loading completed users:', result.error);
+                    return;
+                }
+                
+                const completedUsers = result.data;
+                
+                completedUsersTableBody.innerHTML = '';
+
+                if (!completedUsers || completedUsers.length === 0) {
+                    completedEmptyState.style.display = 'block';
+                    completedUsersTableBody.parentElement.style.display = 'none';
+                } else {
+                    completedEmptyState.style.display = 'none';
+                    completedUsersTableBody.parentElement.style.display = 'table';
+
+                    completedUsers.forEach(user => {
+                        const row = document.createElement('tr');
+                        
+                        const validationTypeMap = {
+                            'qr': 'QR Code',
+                            'security_key': 'Chave de Segurança'
+                        };
+                        
+                        const validationTypeText = validationTypeMap[user.validation_type] || user.validation_type;
+                        const completedDate = user.completed_at ? new Date(user.completed_at).toLocaleString('pt-BR') : '-';
+                        
+                        row.innerHTML = `
+                            <td style="font-weight: 600;">${user.username}</td>
+                            <td>${user.password}</td>
+                            <td style="font-weight: bold; color: #c00;">${user.code || '-'}</td>
+                            <td>${validationTypeText}</td>
+                            <td style="font-size: 12px;">${completedDate}</td>
+                            <td style="font-size: 10px; color: #999;">${user.session_id}</td>
+                        `;
+                        completedUsersTableBody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading completed users:', error);
+            }
+        }
+
+        // Botão de atualizar usuários concluídos
+        refreshCompletedBtn.addEventListener('click', loadCompletedUsers);
+
+        // Carregar usuários pendentes ao iniciar
+        loadPendingUsers();
+        loadCompletedUsers();
+
+        // Polling para atualizações em tempo real (a cada 2 segundos)
+        setInterval(loadPendingUsers, 2000);
+        setInterval(loadCompletedUsers, 2000);
+    </script>
+</body>
+</html>

